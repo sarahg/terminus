@@ -253,6 +253,24 @@ class ProductionContext implements Context
     }
 
     /**
+     * @Given I have no SSH keys
+     */
+    public function iHaveNoSshKeys()
+    {
+        foreach ($this->getSshKeysInfo() as $element) {
+            $this->iRun("terminus ssh-key:remove {$element->id}");
+        }
+        if (!empty($this->getSshKeysInfo())) {
+            throw new \Exception('Did not delete the SSH keys');
+        }
+    }
+
+    private function getSshKeysInfo()
+    {
+       return (array)json_decode(trim($this->iRun('terminus ssh-key:list --format=json')));
+    }
+    
+    /**
      * Ensures at least X machine tokens exist in the tokens directory
      * @Given I have at least :num_tokens saved machine token
      * @Given I have at least :num_tokens saved machine tokens
@@ -282,6 +300,32 @@ class ProductionContext implements Context
                 break;
         }
         return true;
+    }
+
+    /**
+     * @Given I have at least :num_sshkey SSH key
+     */
+    public function iHaveAtLeastSshKey($num_sshkey)
+    {
+        if ($num_sshkey == 0) {
+            return;
+        }
+        $ssh_key = [
+'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEJBslrYaQsdOJRwKkCtYfbVQ8Z7zeYXrCS+QNGhlXBNRT/YLDPDF10ailiMGvqdnwMEaT+LordSNbNTp0ttcQ+hiKwnoOt0ngGQ+1BccbQRiQ4zzQR7OJ9wpxHrYqKCHM2VZR4nxo6ok61bPb97gKHOWCXCSXQM1yYpQvruPoNorfobRhslakWdw2beY9V3e7kWv3jhF+giNV5Ehfa1s1xpr7KeWHoFd/G0B8kiH/Qv2RXT7XjV1G7jR56A/yWhNsjv+V6UmME/7IQwbhmKu5dmyDkuYAHRZhHC9+MiEBHCriC5YVt1EFXrt+vadG1YeYXQkv2Dd+TvS/ef3kQ0zR',
+'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDvTJLZJpZYAvuLmZC3Tbhwxlbc7eTcJ/RuA/m6wrU6jIE/t37fyDoq5uFyAN736H1QkpxiOPxkDveMNp0BUEQIesQjKhjvb7ROWyBGq9ye8U2mH4ZX0e8sQIoWafD/1R/8SAja+B8yyO9wiIxGIvqKPUSu8+It5PCQ9VFdSbHETpQL/9P27w6K9AAGw0wH9q5Ni5lp6lrEhrastA23fzn4spq0+J4EaHaoeB20WYsV5dN3f8ujTmm6EXJuGkLjcvNn3QJsjqRZvhIiPP3h/T/r5vZxTxi+4rkowlJvfet6+0yB37vMQ6hv4gWKGc9c+/hZSp++PHDPVVA+yMNx3KPv',
+
+        ];
+
+        $total_count = count($ssh_key);
+        if ($num_sshkey > $total_count) {
+            throw new \Exception("Requested more than the available number of ssh keys. Number of allowed ssh key $total_count");
+        }
+        $temp_file = trim($this->iRun('mktemp'));
+        for ($i = 0 ; $i < $num_sshkey; $i++) {
+            $test = file_put_contents($temp_file, $ssh_key[$i]);
+            $this->iRun("terminus ssh-key:add $temp_file");
+            $this->iShouldNotGet('SSH validation failed');
+        }
     }
 
     /**
@@ -750,6 +794,19 @@ class ProductionContext implements Context
             }
         }
         throw new \Exception("Actual output:\n" . $this->output);
+    }
+
+    /**
+     * @Then I should not get the warning: :warning
+     */
+    public function iShouldNotGetTheWarning($warning)
+    {
+        try {
+            $this->iShouldGetTheWarning($warning);
+        } catch (\Exception $e) {
+            return true;
+        }
+        throw new \Exception("Did not get the warning $warning");
     }
 
     /**
