@@ -31,6 +31,7 @@ class InfoCommand extends TerminusCommand implements SiteAwareInterface
      *     locked: Locked
      *     initialized: Initialized
      *     connection_mode: Connection Mode
+     *     uncommitted_changes: Uncommitted changes
      *     php_version: PHP Version
      *     drush_version: Drush Version
      * @return PropertyList

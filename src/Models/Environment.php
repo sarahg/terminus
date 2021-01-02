@@ -769,6 +769,7 @@ class Environment extends TerminusModel implements ContainerAwareInterface, Site
             'locked' => $this->getLock()->isLocked(),
             'initialized' => $this->isInitialized(),
             'connection_mode' => $this->get('connection_mode'),
+            'uncommitted_changes' => $this->hasUncommittedChanges(),
             'php_version' => $this->getPHPVersion(),
         ];
     }
